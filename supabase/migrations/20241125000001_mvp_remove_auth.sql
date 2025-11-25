@@ -66,6 +66,12 @@ DROP POLICY IF EXISTS "Users can insert own chat history" ON chat_history;
 DROP POLICY IF EXISTS "Admins can view all chat history" ON chat_history;
 
 -- Create open policies (allow all operations)
+-- First drop if they exist, then create
+DROP POLICY IF EXISTS "Allow all operations on documents" ON documents;
+DROP POLICY IF EXISTS "Allow all operations on chunks" ON chunks;
+DROP POLICY IF EXISTS "Allow all operations on embeddings" ON embeddings;
+DROP POLICY IF EXISTS "Allow all operations on chat_history" ON chat_history;
+
 CREATE POLICY "Allow all operations on documents" ON documents FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all operations on chunks" ON chunks FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all operations on embeddings" ON embeddings FOR ALL USING (true) WITH CHECK (true);
@@ -82,6 +88,11 @@ DROP POLICY IF EXISTS "Users can delete own documents" ON storage.objects;
 DROP POLICY IF EXISTS "Admins can view all documents" ON storage.objects;
 
 -- Create open storage policies for documents bucket
+-- First drop if they exist, then create
+DROP POLICY IF EXISTS "Allow all uploads to documents bucket" ON storage.objects;
+DROP POLICY IF EXISTS "Allow all reads from documents bucket" ON storage.objects;
+DROP POLICY IF EXISTS "Allow all deletes from documents bucket" ON storage.objects;
+
 CREATE POLICY "Allow all uploads to documents bucket" ON storage.objects
   FOR INSERT WITH CHECK (bucket_id = 'documents');
 
