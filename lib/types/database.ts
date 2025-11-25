@@ -61,4 +61,6 @@ export interface RAGResponse {
     chunk_content: string
     relevance_score: number
   }>
+  cached?: boolean
+  cacheHitSimilarity?: string
 }

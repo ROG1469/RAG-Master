@@ -15,6 +15,8 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   sources?: RAGResponse['sources']
+  cached?: boolean
+  cacheHitSimilarity?: string
 }
 
 export default function ChatInterface({ role, initialHistory = [] }: ChatInterfaceProps = {}) {
@@ -68,7 +70,9 @@ export default function ChatInterface({ role, initialHistory = [] }: ChatInterfa
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: result.data!.answer,
-        sources: result.data!.sources 
+        sources: result.data!.sources,
+        cached: result.data!.cached,
+        cacheHitSimilarity: result.data!.cacheHitSimilarity
       }])
     }
 
@@ -117,6 +121,14 @@ export default function ChatInterface({ role, initialHistory = [] }: ChatInterfa
                     </>
                   )}
                 </button>
+
+                {/* Cache Hit Badge */}
+                {msg.cached && msg.role === 'assistant' && (
+                  <div className="bg-green-900/30 border border-green-700/50 rounded-lg p-2 text-xs">
+                    <p className="text-green-400 font-medium">💾 Cached Response</p>
+                    <p className="text-green-300 text-xs mt-1">Match similarity: {msg.cacheHitSimilarity || 'N/A'}</p>
+                  </div>
+                )}
 
                 {/* Sources for Assistant Messages */}
                 {msg.sources && msg.sources.length > 0 && (

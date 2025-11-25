@@ -20,8 +20,8 @@ serve(async (req) => {
   }
 
   try {
-    const { question, customerMode, employeeMode } = await req.json();
-    console.log(`💬 Query: "${question}" (customerMode: ${customerMode}, employeeMode: ${employeeMode})`);
+    const { question, customerMode, employeeMode } = await req.json()
+    console.log(`💬 Query: "${question}" (customerMode: ${customerMode}, employeeMode: ${employeeMode})`)
 
     if (!question) {
       return new Response(
@@ -30,8 +30,12 @@ serve(async (req) => {
           status: 400,
           headers: { "Content-Type": "application/json" },
         }
-      );
+      )
     }
+
+    // Determine role
+    const role = customerMode ? 'customer' : employeeMode ? 'employee' : 'business_owner'
+    console.log(`🎯 Determined role: ${role}`)
 
     // Initialize clients
     console.log("🔐 Checking environment variables...");
@@ -60,8 +64,8 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
     const genAI = new GoogleGenerativeAI(geminiKey);
 
-    // STEP 1 — Generate embedding for question
-    console.log("🔢 Generating question embedding...");
+    // STEP 0 — Check cache for similar queries
+    console.log("💾 Checking query cache...");
 
     const embeddingModel = genAI.getGenerativeModel({
       model: "models/text-embedding-004",
@@ -69,6 +73,37 @@ serve(async (req) => {
 
     const embedResult = await embeddingModel.embedContent(question);
     const questionEmbedding = embedResult.embedding.values;
+
+    // Search cache for similar queries
+    const { data: cachedResults } = await supabase.rpc('find_similar_cached_queries', {
+      query_embedding: questionEmbedding,
+      similarity_threshold: 0.85,
+      role_filter: role,
+      limit_count: 1
+    });
+    
+    if (cachedResults && cachedResults.length > 0) {
+      const cached = cachedResults[0];
+      console.log(`✅ Cache hit! Similarity: ${cached.similarity.toFixed(3)}`);
+      
+      // Increment hit count
+      await supabase.rpc('increment_query_cache_hit', {
+        cache_id: cached.id
+      });
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          answer: cached.answer,
+          sources: cached.sources,
+          cached: true,
+          cacheHitSimilarity: cached.similarity.toFixed(3)
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    
+    console.log("❌ Cache miss - proceeding with full RAG pipeline...");
 
     // STEP 2 — Get documents based on mode (MVP: all documents are accessible)
     let documentIds: string[] = [];
@@ -322,16 +357,34 @@ Answer (plain professional text, addressing ALL parts of the question):`;
       });
     }
 
+    // STEP 8 — Save to cache for future similar queries
+    console.log("💾 Saving answer to query cache...");
+    const sourcesData = scored.map((c: any) => ({
+      document_id: c.document_id,
+      filename: c.filename,
+      chunk_content: c.content.substring(0, 200) + "...",
+      relevance_score: c.similarity,
+    }));
+
+    try {
+      await supabase.rpc('save_cached_query', {
+        p_question: question,
+        p_question_embedding: questionEmbedding,
+        p_answer: answer,
+        p_sources: sourcesData,
+        p_role: role
+      });
+      console.log("✅ Query cached successfully");
+    } catch (cacheError) {
+      console.warn("⚠️ Failed to cache query:", cacheError);
+      // Don't fail the response if caching fails
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         answer,
-        sources: scored.map((c: any) => ({
-          document_id: c.document_id,
-          filename: c.filename,
-          chunk_content: c.content.substring(0, 200) + "...",
-          relevance_score: c.similarity,
-        })),
+        sources: sourcesData,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );

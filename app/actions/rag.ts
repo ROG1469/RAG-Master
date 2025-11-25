@@ -69,10 +69,15 @@ export async function queryRAG(question: string, role?: string): Promise<{ data?
     console.log('[QUERY] ✅ Edge Function success')
     console.log('[QUERY] Answer length:', result.answer?.length || 0)
     console.log('[QUERY] Sources count:', result.sources?.length || 0)
+    if (result.cached) {
+      console.log('[QUERY] 💾 CACHE HIT! Similarity:', result.cacheHitSimilarity)
+    }
 
     const ragResponse: RAGResponse = {
       answer: result.answer,
-      sources: result.sources || []
+      sources: result.sources || [],
+      cached: result.cached || false,
+      cacheHitSimilarity: result.cacheHitSimilarity
     }
 
     return { data: ragResponse }
