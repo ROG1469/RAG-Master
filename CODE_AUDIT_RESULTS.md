@@ -14,10 +14,10 @@ Comprehensive code audit completed. The application is now fully functional with
 All required environment variables are properly configured in `.env.local`:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://jpyacjqxlppfawvobfds.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-GEMINI_API_KEY=AIzaSyCtNSzozk_CeirRkS_7HdAvcbtgEeS3DGQ
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+GEMINI_API_KEY=your-gemini-api-key-here
 ```
 
 **Used correctly in:**

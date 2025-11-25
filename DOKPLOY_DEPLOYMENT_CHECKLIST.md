@@ -41,7 +41,7 @@
 - [ ] HTTPS: `ON` (recommended)
 
 ### Environment Variables Added
-- [ ] `NEXT_PUBLIC_SUPABASE_URL` = `https://jpyacjqxlppfawvobfds.supabase.co`
+- [ ] `NEXT_PUBLIC_SUPABASE_URL` = `https://your-project.supabase.co`
 - [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` = (from .env.local)
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` = (from .env.local)
 - [ ] `NODE_ENV` = `production`

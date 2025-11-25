@@ -44,7 +44,7 @@ git push origin main
 Copy these from `.env.local` and add to Dokploy:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://jpyacjqxlppfawvobfds.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<copy from .env.local>
 SUPABASE_SERVICE_ROLE_KEY=<copy from .env.local>
 NODE_ENV=production

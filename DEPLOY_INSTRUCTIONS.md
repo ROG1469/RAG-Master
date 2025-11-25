@@ -5,7 +5,7 @@ Since Supabase CLI interactive login doesn't work in the terminal, follow these 
 ## Option 1: Deploy via Supabase Dashboard (EASIEST)
 
 1. **Go to your Supabase Dashboard**
-   - Open: https://supabase.com/dashboard/project/jpyacjqxlppfawvobfds
+   - Open: https://supabase.com/dashboard/project/your-project-ref
 
 2. **Navigate to Edge Functions**
    - Click on "Edge Functions" in the left sidebar
@@ -28,7 +28,7 @@ Since Supabase CLI interactive login doesn't work in the terminal, follow these 
    - Go to "Settings" tab
    - Add secret:
      - Name: `GEMINI_API_KEY`
-     - Value: `AIzaSyCtNSzozk_CeirRkS_7HdAvcbtgEeS3DGQ`
+     - Value: `your-gemini-api-key-here`
    - Click "Save"
 
 7. **Test It!**
@@ -57,12 +57,12 @@ $env:SUPABASE_ACCESS_TOKEN='your-access-token-here'
 
 ### Step 3: Link Project
 ```powershell
-npx supabase link --project-ref jpyacjqxlppfawvobfds
+npx supabase link --project-ref your-project-ref
 ```
 
 ### Step 4: Set Secret
 ```powershell
-npx supabase secrets set GEMINI_API_KEY=AIzaSyCTX5kDfnnCJZ7O-JYc-6zMJGB8oAX2R-I
+npx supabase secrets set GEMINI_API_KEY=your-gemini-api-key-here
 ```
 
 ### Step 5: Deploy

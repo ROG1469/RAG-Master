@@ -18,9 +18,9 @@ Before deploying, you **must add these environment variables** to Dokploy:
 
 ```
 # Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://jpyacjqxlppfawvobfds.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 
 # Next.js Build & Runtime
 NODE_ENV=production
@@ -53,7 +53,7 @@ docker build -t rag3:local .
 docker run --rm -it -p 3000:3000 \
   -e NODE_ENV=production \
   -e PORT=3000 \
-  -e NEXT_PUBLIC_SUPABASE_URL=https://jpyacjqxlppfawvobfds.supabase.co \
+  -e NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co \
   -e NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key_here \
   -e SUPABASE_SERVICE_ROLE_KEY=your_key_here \
   rag3:local
@@ -114,7 +114,7 @@ If you already have a service:
 3. Example:
    ```
    Key: NEXT_PUBLIC_SUPABASE_URL
-   Value: https://jpyacjqxlppfawvobfds.supabase.co
+   Value: https://your-project.supabase.co
    ```
 4. Click **Save** after adding all variables
 
@@ -213,7 +213,7 @@ Add them in Dokploy and redeploy.
 
 | Key | Value |
 |-----|-------|
-| `NEXT_PUBLIC_SUPABASE_URL` | `https://jpyacjqxlppfawvobfds.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://your-project.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | (from `.env.local`) |
 | `SUPABASE_SERVICE_ROLE_KEY` | (from `.env.local`) |
 | `NODE_ENV` | `production` |

@@ -14,7 +14,7 @@ Your RAG system now has **proper separation of concerns** with 3 Edge Functions:
 
 ### Step 1: Deploy `process-document`
 
-1. Go to: https://supabase.com/dashboard/project/jpyacjqxlppfawvobfds/functions
+1. Go to: https://supabase.com/dashboard/project/your-project-ref/functions
 2. Click "Create a new function"
 3. Name: `process-document` (replace existing if asked)
 4. Copy ALL code from: `supabase/functions/process-document/index-new.ts`
@@ -35,7 +35,7 @@ Your RAG system now has **proper separation of concerns** with 3 Edge Functions:
 6. Go to **Settings** tab
 7. Add secret:
    - Key: `GEMINI_API_KEY`
-   - Value: `AIzaSyCtNSzozk_CeirRkS_7HdAvcbtgEeS3DGQ`
+   - Value: `your-gemini-api-key-here`
 8. Click **Save**
 
 ---
@@ -50,7 +50,7 @@ Your RAG system now has **proper separation of concerns** with 3 Edge Functions:
 6. Go to **Settings** tab
 7. Add secret:
    - Key: `GEMINI_API_KEY`
-   - Value: `AIzaSyCtNSzozk_CeirRkS_7HdAvcbtgEeS3DGQ`
+   - Value: `your-gemini-api-key-here`
 8. Click **Save**
 
 ---

@@ -96,9 +96,9 @@ git push origin main
 
 Your `.env.local` contains:
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://jpyacjqxlppfawvobfds.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 ```
 
 **Copy all of these to Dokploy** (Section Step 3, item 5 above).
