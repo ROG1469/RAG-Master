@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Otherwise, try to answer the question
-    const queryUrl = `${supabaseUrl}/functions/v1/query-rag`
+    const queryUrl = `${supabaseUrl}/functions/v1/Query-rag`
     
     const queryResponse = await fetch(queryUrl, {
       method: 'POST',

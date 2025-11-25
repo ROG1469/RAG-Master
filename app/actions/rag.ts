@@ -35,7 +35,7 @@ export async function queryRAG(question: string, role?: string): Promise<{ data?
       return { error: 'Server configuration error' }
     }
 
-    const queryUrl = `${supabaseUrl}/functions/v1/query-rag`
+    const queryUrl = `${supabaseUrl}/functions/v1/Query-rag`
     console.log('[QUERY] Calling:', queryUrl)
     
     const response = await fetch(queryUrl, {
