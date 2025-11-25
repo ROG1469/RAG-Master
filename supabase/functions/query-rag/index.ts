@@ -28,9 +28,24 @@ serve(async (req) => {
     }
 
     // Initialize clients
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const geminiKey = Deno.env.get("GEMINI_API_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const geminiKey = Deno.env.get("GEMINI_API_KEY");
+
+    if (!supabaseUrl || !supabaseKey || !geminiKey) {
+      console.error("❌ Missing environment variables:", {
+        supabaseUrl: !!supabaseUrl,
+        supabaseKey: !!supabaseKey,
+        geminiKey: !!geminiKey,
+      });
+      return new Response(
+        JSON.stringify({ error: "Server configuration error: missing environment variables" }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
     const genAI = new GoogleGenerativeAI(geminiKey);
@@ -312,10 +327,12 @@ Answer (plain professional text, addressing ALL parts of the question):`;
     );
   } catch (error) {
     console.error("❌ Error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
 
     return new Response(
       JSON.stringify({
-        error: (error as Error)?.message ?? "Unknown error",
+        error: errorMessage || "Unknown error occurred in query-rag function",
+        details: error instanceof Error ? error.stack : undefined,
       }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
