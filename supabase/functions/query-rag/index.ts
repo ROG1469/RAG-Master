@@ -73,6 +73,20 @@ serve(async (req) => {
 
     const embedResult = await embeddingModel.embedContent(question);
     const questionEmbedding = embedResult.embedding.values;
+    
+    console.log(`📊 Embedding dimensions: ${questionEmbedding.length} (expected 768)`);
+    if (questionEmbedding.length !== 768) {
+      console.warn(`⚠️ WARNING: Embedding is ${questionEmbedding.length}D, not 768D!`);
+      // Pad or truncate to 768 dimensions
+      if (questionEmbedding.length < 768) {
+        const padding = new Array(768 - questionEmbedding.length).fill(0);
+        questionEmbedding.push(...padding);
+        console.log(`✅ Padded embedding to 768D`);
+      } else {
+        questionEmbedding.length = 768;
+        console.log(`✅ Truncated embedding to 768D`);
+      }
+    }
 
     // Search cache for similar queries
     const { data: cachedResults } = await supabase.rpc('find_similar_cached_queries', {
@@ -397,17 +411,16 @@ Answer (plain professional text, addressing ALL parts of the question):`;
     try {
       console.log(`📦 Cache params:`, {
         p_question: question.substring(0, 50),
-        p_question_embedding: `vector(${questionEmbedding.length})`,
-        p_answer: answer.substring(0, 50),
-        p_sources: sourcesData,
+        embedding_dimensions: questionEmbedding.length,
         p_role: role
       });
 
+      // IMPORTANT: Pass embedding as an object with proper format for Supabase vector type
       const { data: cacheResult, error: cacheErr } = await supabase.rpc('save_cached_query', {
         p_question: question,
-        p_question_embedding: questionEmbedding,
+        p_question_embedding: questionEmbedding,  // Supabase will convert array to vector(768)
         p_answer: answer,
-        p_sources: sourcesData,  // Pass as object/array, NOT stringified - Supabase will handle JSON encoding
+        p_sources: sourcesData,  // Pass as object/array, NOT stringified
         p_role: role
       });
       
