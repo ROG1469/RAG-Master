@@ -1,31 +1,12 @@
--- Migration: Fix Query Cache Issues
--- Purpose: Add unique constraint and fix the save_cached_query function
+-- Migration: Fix save_cached_query RETURNS TABLE syntax
+-- Issue: Error 42601 - "query has no destination for result data"
+-- Root Cause: RETURNS TABLE with plpgsql requires RETURN NEXT, not RETURNING
 
--- ============================================
--- Add unique constraint for ON CONFLICT
--- ============================================
-
--- First, remove any duplicate entries (keep the first/oldest one by created_at)
-DELETE FROM public.query_cache qc1
-WHERE qc1.ctid NOT IN (
-  SELECT (array_agg(ctid))[1]
-  FROM public.query_cache
-  GROUP BY question, role
-);
-
--- Add unique constraint
-ALTER TABLE public.query_cache
-ADD CONSTRAINT unique_question_role UNIQUE (question, role);
-
--- ============================================
--- Fix save_cached_query function
--- Now properly converts sources to JSONB
--- ============================================
-
--- Drop the old function first (it has a different return type)
+-- Drop the broken function
 DROP FUNCTION IF EXISTS public.save_cached_query(TEXT, vector, TEXT, JSONB, TEXT) CASCADE;
 
-CREATE OR REPLACE FUNCTION public.save_cached_query(
+-- Recreate with correct syntax
+CREATE FUNCTION public.save_cached_query(
   p_question TEXT,
   p_question_embedding vector,
   p_answer TEXT,
@@ -82,5 +63,13 @@ $$ LANGUAGE plpgsql;
 -- Verification
 -- ============================================
 
-SELECT 'Query cache fix migration completed!' as status;
-SELECT COUNT(*) as cache_entries FROM public.query_cache;
+SELECT 'save_cached_query function fixed!' as status;
+
+-- Test: Call the function with dummy data
+SELECT * FROM public.save_cached_query(
+  'test question',
+  (SELECT embedding FROM public.query_cache LIMIT 1) ,
+  'test answer',
+  '[]'::JSONB,
+  'admin'
+) LIMIT 1;

@@ -81,12 +81,13 @@ serve(async (req) => {
       if (questionEmbedding.length < 768) {
         const padding = new Array(768 - questionEmbedding.length).fill(0);
         questionEmbedding.push(...padding);
-        console.log(`✅ Padded embedding to 768D`);
+        console.log(`✅ Padded embedding from ${embedResult.embedding.values.length}D to 768D`);
       } else {
         questionEmbedding.length = 768;
         console.log(`✅ Truncated embedding to 768D`);
       }
     }
+    console.log(`✅ Final embedding dimensions: ${questionEmbedding.length}`);
 
     // Search cache for similar queries
     const { data: cachedResults } = await supabase.rpc('find_similar_cached_queries', {
@@ -412,21 +413,50 @@ Answer (plain professional text, addressing ALL parts of the question):`;
       console.log(`📦 Cache params:`, {
         p_question: question.substring(0, 50),
         embedding_dimensions: questionEmbedding.length,
+        embedding_type: typeof questionEmbedding,
+        embedding_is_array: Array.isArray(questionEmbedding),
         p_role: role
       });
 
-      // IMPORTANT: Pass embedding as an object with proper format for Supabase vector type
-      const { data: cacheResult, error: cacheErr } = await supabase.rpc('save_cached_query', {
+      console.log(`📊 First 5 embedding values: [${questionEmbedding.slice(0, 5).join(', ')}]`);
+      console.log(`📊 Last 5 embedding values: [${questionEmbedding.slice(-5).join(', ')}]`);
+
+      // IMPORTANT: Supabase expects embedding as array, converts to pgvector internally
+      const embeddingArray = Array.from(questionEmbedding); // Ensure it's a proper JS array
+      console.log(`✅ Prepared embedding array: ${embeddingArray.length} dimensions`);
+      console.log(`📝 Sources data:`, JSON.stringify(sourcesData).substring(0, 100));
+
+      const rpcParams = {
         p_question: question,
-        p_question_embedding: questionEmbedding,  // Supabase will convert array to vector(768)
+        p_question_embedding: embeddingArray,
         p_answer: answer,
-        p_sources: sourcesData,  // Pass as object/array, NOT stringified
+        p_sources: sourcesData,  // Supabase will handle JSON conversion
         p_role: role
-      });
+      };
       
+      console.log(`📤 Calling RPC with params:`, {
+        p_question_len: rpcParams.p_question.length,
+        p_question_embedding_len: rpcParams.p_question_embedding.length,
+        p_answer_len: rpcParams.p_answer.length,
+        p_sources_count: rpcParams.p_sources.length,
+        p_role: rpcParams.p_role
+      });
+
+      const { data: cacheResult, error: cacheErr } = await supabase.rpc('save_cached_query', rpcParams);
+      
+      console.log(`📥 RPC Response:`, { 
+        cacheResult, 
+        cacheErr,
+        hasError: !!cacheErr,
+        hasData: !!cacheResult,
+        dataLength: cacheResult?.length
+      });
+
       if (cacheErr) {
         console.error(`❌ Cache RPC error: ${cacheErr.message}`);
-        console.error(`   Error details:`, cacheErr);
+        console.error(`   Error code:`, (cacheErr as any).code);
+        console.error(`   Full error object:`, cacheErr);
+        console.error(`   Embedding array length was: ${embeddingArray.length}`);
       } else if (!cacheResult || cacheResult.length === 0) {
         console.warn(`⚠️ Cache RPC returned empty result`);
       } else {
