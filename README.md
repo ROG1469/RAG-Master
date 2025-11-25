@@ -1,16 +1,18 @@
 # 🤖 RAG System MVP
 
-A production-ready Retrieval-Augmented Generation (RAG) system built with Next.js, Supabase, and Google Gemini API.
+A production-ready Retrieval-Augmented Generation (RAG) system built with Next.js, Supabase, and Google Gemini API. Features advanced hybrid search combining semantic and keyword matching, intelligent query caching, and robust error handling for enterprise-grade performance.
 
 ## ✨ Features
 
 - 📄 **Multi-format Support** - Upload PDF, Word, and Excel documents
-- 🔍 **Smart Search** - Vector similarity search with pgvector
+- 🔍 **Hybrid Search** - Advanced semantic + keyword search with intelligent weighting
+- 💾 **Smart Caching** - Query caching with hit counting for improved performance
 - 💬 **AI-Powered Q&A** - Ask questions, get contextual answers
 - 👥 **Role-Based Access** - 3 user types with different permissions
 - 🔒 **Secure** - Row-level security, encrypted passwords, JWT sessions
-- ⚡ **Fast** - Serverless API routes, optimized vector search
+- ⚡ **Fast** - Serverless API routes, optimized vector search with caching
 - 🎨 **Modern UI** - Responsive design with Tailwind CSS
+- 🛡️ **Robust Error Handling** - Embedding validation, dimension correction, and comprehensive logging
 
 ## 🚀 Quick Start
 
@@ -93,8 +95,30 @@ File Upload → Text Extraction → Chunking → Embedding Generation → Vector
 
 ### Query Flow
 ```
-Question → Embedding → Vector Search → Context Retrieval → AI Answer Generation
+Question → Cache Check → Hybrid Search (Semantic + Keyword) → Context Retrieval → AI Answer Generation → Cache Storage
 ```
+
+### Hybrid Search Algorithm
+- **Semantic Search:** Vector similarity using pgvector (60% weight)
+- **Keyword Search:** Full-text search with ranking (40% weight)
+- **Combined Scoring:** Intelligent fusion for optimal results
+- **Fallback:** Automatic fallback to semantic-only if hybrid fails
+
+## 💾 Query Caching System
+
+Intelligent caching improves performance for repeated questions:
+
+- **Cache Lookup:** Automatic check for similar questions by role
+- **Hit Counting:** Tracks usage frequency for analytics
+- **Expiration:** No expiration - manual cleanup via admin
+- **Conflict Resolution:** ON CONFLICT DO UPDATE for duplicate questions
+- **Embedding Validation:** Automatic dimension correction (pad/truncate to 768D)
+
+### Cache Benefits
+- ⚡ **Speed:** <100ms response for cached queries
+- 📊 **Analytics:** Track popular questions and usage patterns
+- 💰 **Cost Savings:** Reduce API calls for repeated questions
+- 🎯 **Accuracy:** Consistent answers for identical questions
 
 ## 🔐 Security
 
@@ -180,8 +204,11 @@ GEMINI_API_KEY=your_gemini_key
 ## 📈 Performance
 
 - **Upload:** 5-40 seconds (depends on file size)
-- **Query:** 3-6 seconds (vector search + AI generation)
-- **Embeddings:** 768 dimensions (Gemini embedding-001)
+- **First Query:** 3-6 seconds (vector search + AI generation)
+- **Cached Query:** <100ms (instant response with hit counting)
+- **Embeddings:** 768 dimensions (Gemini embedding-004 with validation)
+- **Search:** Hybrid semantic + keyword with intelligent weighting
+- **Cache Hit Rate:** Automatic optimization for repeated questions
 
 ## 🐛 Troubleshooting
 
@@ -206,12 +233,14 @@ npm run dev
 
 Current MVP includes core functionality. Future enhancements:
 
-- [ ] Advanced chunking strategies
-- [ ] Metadata extraction
-- [ ] Hybrid search (keyword + vector)
-- [ ] Conversation history
-- [ ] Streaming responses
-- [ ] Analytics dashboard
+- [ ] Advanced chunking strategies (sliding window, sentence-aware)
+- [ ] Metadata extraction and filtering
+- [ ] Conversation history and context
+- [ ] Streaming responses for better UX
+- [ ] Analytics dashboard with search metrics
+- [ ] Multi-language support
+- [ ] Document versioning and updates
+- [ ] API rate limiting and optimization
 
 ## 📝 License
 
