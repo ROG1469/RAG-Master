@@ -5,10 +5,10 @@
 -- Add unique constraint for ON CONFLICT
 -- ============================================
 
--- First, remove any duplicate entries (keep the first one)
+-- First, remove any duplicate entries (keep the first/oldest one by created_at)
 DELETE FROM public.query_cache qc1
-WHERE qc1.id NOT IN (
-  SELECT MIN(id)
+WHERE qc1.ctid NOT IN (
+  SELECT (array_agg(ctid))[1]
   FROM public.query_cache
   GROUP BY question, role
 );
@@ -22,6 +22,9 @@ ADD CONSTRAINT unique_question_role UNIQUE (question, role);
 -- Now properly converts sources to JSONB
 -- ============================================
 
+-- Drop the old function first (it has a different return type)
+DROP FUNCTION IF EXISTS public.save_cached_query(TEXT, vector, TEXT, JSONB, TEXT) CASCADE;
+
 CREATE OR REPLACE FUNCTION public.save_cached_query(
   p_question TEXT,
   p_question_embedding vector,
@@ -31,12 +34,8 @@ CREATE OR REPLACE FUNCTION public.save_cached_query(
 )
 RETURNS TABLE (
   id UUID,
-  created_at TIMESTAMPTZ,
-  was_inserted BOOLEAN
+  created_at TIMESTAMPTZ
 ) AS $$
-DECLARE
-  v_id UUID;
-  v_was_inserted BOOLEAN := FALSE;
 BEGIN
   INSERT INTO public.query_cache (
     question,
@@ -68,9 +67,7 @@ BEGIN
     answer = p_answer,
     question_embedding = p_question_embedding,
     sources = COALESCE(p_sources, '[]'::JSONB)
-  RETURNING query_cache.id, query_cache.created_at INTO v_id, v_created_at;
-  
-  RETURN QUERY SELECT v_id, v_created_at, v_was_inserted;
+  RETURNING query_cache.id, query_cache.created_at;
 END;
 $$ LANGUAGE plpgsql;
 

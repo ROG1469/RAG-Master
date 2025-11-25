@@ -395,21 +395,33 @@ Answer (plain professional text, addressing ALL parts of the question):`;
     }));
 
     try {
+      console.log(`📦 Cache params:`, {
+        p_question: question.substring(0, 50),
+        p_question_embedding: `vector(${questionEmbedding.length})`,
+        p_answer: answer.substring(0, 50),
+        p_sources: sourcesData,
+        p_role: role
+      });
+
       const { data: cacheResult, error: cacheErr } = await supabase.rpc('save_cached_query', {
         p_question: question,
         p_question_embedding: questionEmbedding,
         p_answer: answer,
-        p_sources: JSON.stringify(sourcesData),  // Convert to JSON string, function converts to JSONB
+        p_sources: sourcesData,  // Pass as object/array, NOT stringified - Supabase will handle JSON encoding
         p_role: role
       });
       
       if (cacheErr) {
-        console.warn(`⚠️ Cache error: ${cacheErr.message}`);
+        console.error(`❌ Cache RPC error: ${cacheErr.message}`);
+        console.error(`   Error details:`, cacheErr);
+      } else if (!cacheResult || cacheResult.length === 0) {
+        console.warn(`⚠️ Cache RPC returned empty result`);
       } else {
-        console.log(`✅ Query cached successfully (id: ${cacheResult?.[0]?.id})`);
+        console.log(`✅ Query cached successfully (id: ${cacheResult[0]?.id})`);
       }
     } catch (cacheError) {
-      console.warn("⚠️ Failed to cache query:", (cacheError as Error)?.message);
+      console.error("❌ Cache exception:", (cacheError as Error)?.message);
+      console.error("   Full error:", cacheError);
       // Don't fail the response if caching fails
     }
 
