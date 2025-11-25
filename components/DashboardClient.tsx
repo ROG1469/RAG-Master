@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Settings, FileText, MessageSquare } from 'lucide-react'
+import { Settings, FileText, MessageSquare, RotateCcw } from 'lucide-react'
 import Link from 'next/link'
 import NewDashboardContent from '@/components/NewDashboardContent'
 import KnowledgeBaseClient from '@/components/KnowledgeBaseClient'
@@ -22,9 +22,15 @@ export default function DashboardClient({
   initialDocuments = []
 }: DashboardClientProps) {
   const [currentRole, setCurrentRole] = useState(initialRole)
+  const [newChatTrigger, setNewChatTrigger] = useState(0)
 
   async function handleSignOut() {
     await signOutAction()
+  }
+
+  function handleNewChat() {
+    console.log('🔄 New Chat triggered')
+    setNewChatTrigger(prev => prev + 1)
   }
 
   return (
@@ -56,6 +62,13 @@ export default function DashboardClient({
                 <MessageSquare className="h-4 w-4" />
                 Chat Interface
               </Link>
+              <button
+                onClick={handleNewChat}
+                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+              >
+                <RotateCcw className="h-4 w-4" />
+                New Chat
+              </button>
             </nav>
           </div>
         </div>
@@ -140,7 +153,11 @@ export default function DashboardClient({
         {isKnowledgeBase ? (
           <KnowledgeBaseClient documents={initialDocuments} />
         ) : (
-          <NewDashboardContent key={currentRole} userRole={currentRole} />
+          <NewDashboardContent 
+            key={`${currentRole}-${newChatTrigger}`}
+            userRole={currentRole}
+            newChatTrigger={newChatTrigger}
+          />
         )}
       </div>
     </div>

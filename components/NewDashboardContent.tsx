@@ -21,9 +21,10 @@ interface ChatHistoryItem {
 
 interface NewDashboardContentProps {
   userRole: string
+  newChatTrigger?: number
 }
 
-export default function NewDashboardContent({ userRole }: NewDashboardContentProps) {
+export default function NewDashboardContent({ userRole, newChatTrigger }: NewDashboardContentProps) {
   const [question, setQuestion] = useState('')
   const [loading, setLoading] = useState(false)
   const [messages, setMessages] = useState<Array<{
@@ -48,11 +49,14 @@ export default function NewDashboardContent({ userRole }: NewDashboardContentPro
     setQuestion('')
   }, [userRole])
 
-  function handleNewChat() {
-    console.log('Starting new chat...')
-    setMessages([])
-    setQuestion('')
-  }
+  // Clear messages when New Chat is clicked
+  useEffect(() => {
+    if (newChatTrigger && newChatTrigger > 0) {
+      console.log('✨ Clearing messages from New Chat button')
+      setMessages([])
+      setQuestion('')
+    }
+  }, [newChatTrigger])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -149,17 +153,8 @@ export default function NewDashboardContent({ userRole }: NewDashboardContentPro
         </div>
 
         {/* Input Area */}
-        <div className="border-t border-slate-800 bg-slate-900/50 px-6 py-4 space-y-3">
-          <div className="max-w-3xl mx-auto w-full">
-            {/* New Chat Button - Always visible */}
-            {messages.length > 0 && (
-              <button
-                onClick={handleNewChat}
-                className="w-full px-4 py-2.5 text-sm font-medium text-gray-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors mb-3"
-              >
-                + New Chat
-              </button>
-            )}
+        <div className="border-t border-slate-800 bg-slate-900/50 px-6 py-4">
+          <div className="max-w-3xl mx-auto">
             <form onSubmit={handleSubmit} className="mb-2">
               <div className="relative">
                 <input
