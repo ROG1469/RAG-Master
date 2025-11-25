@@ -9,6 +9,12 @@ import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.24.1";
 console.log("✅ query-rag initialized");
 
 serve(async (req) => {
+  console.log("📨 Received request:", {
+    method: req.method,
+    url: req.url,
+    headers: Object.fromEntries(req.headers),
+  });
+
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }
@@ -28,18 +34,21 @@ serve(async (req) => {
     }
 
     // Initialize clients
+    console.log("🔐 Checking environment variables...");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const geminiKey = Deno.env.get("GEMINI_API_KEY");
 
+    console.log("📋 Environment check:", {
+      SUPABASE_URL: supabaseUrl ? `✅ ${supabaseUrl.substring(0, 30)}...` : "❌ MISSING",
+      SUPABASE_SERVICE_ROLE_KEY: supabaseKey ? `✅ ${supabaseKey.substring(0, 10)}...` : "❌ MISSING",
+      GEMINI_API_KEY: geminiKey ? `✅ ${geminiKey.substring(0, 10)}...` : "❌ MISSING",
+    });
+
     if (!supabaseUrl || !supabaseKey || !geminiKey) {
-      console.error("❌ Missing environment variables:", {
-        supabaseUrl: !!supabaseUrl,
-        supabaseKey: !!supabaseKey,
-        geminiKey: !!geminiKey,
-      });
+      console.error("❌ Missing environment variables - Check Edge Function Settings → Secrets");
       return new Response(
-        JSON.stringify({ error: "Server configuration error: missing environment variables" }),
+        JSON.stringify({ error: "Server configuration error: missing environment variables. Check Edge Function secrets." }),
         {
           status: 500,
           headers: { "Content-Type": "application/json" },
@@ -47,6 +56,7 @@ serve(async (req) => {
       );
     }
 
+    console.log("✅ All environment variables present");
     const supabase = createClient(supabaseUrl, supabaseKey);
     const genAI = new GoogleGenerativeAI(geminiKey);
 
