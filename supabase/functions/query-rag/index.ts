@@ -395,16 +395,21 @@ Answer (plain professional text, addressing ALL parts of the question):`;
     }));
 
     try {
-      await supabase.rpc('save_cached_query', {
+      const { data: cacheResult, error: cacheErr } = await supabase.rpc('save_cached_query', {
         p_question: question,
         p_question_embedding: questionEmbedding,
         p_answer: answer,
-        p_sources: sourcesData,
+        p_sources: JSON.stringify(sourcesData),  // Convert to JSON string, function converts to JSONB
         p_role: role
       });
-      console.log("✅ Query cached successfully");
+      
+      if (cacheErr) {
+        console.warn(`⚠️ Cache error: ${cacheErr.message}`);
+      } else {
+        console.log(`✅ Query cached successfully (id: ${cacheResult?.[0]?.id})`);
+      }
     } catch (cacheError) {
-      console.warn("⚠️ Failed to cache query:", cacheError);
+      console.warn("⚠️ Failed to cache query:", (cacheError as Error)?.message);
       // Don't fail the response if caching fails
     }
 
