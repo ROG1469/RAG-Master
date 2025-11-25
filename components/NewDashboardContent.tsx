@@ -33,13 +33,23 @@ export default function NewDashboardContent({ userRole }: NewDashboardContentPro
   }>>([])
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
+  // Log when component mounts/unmounts
+  useEffect(() => {
+    console.log(`✅ NewDashboardContent mounted with role: ${userRole}`)
+    return () => {
+      console.log(`❌ NewDashboardContent unmounted from role: ${userRole}`)
+    }
+  }, [userRole])
+
   // Clear messages when role changes
   useEffect(() => {
+    console.log(`🔄 Clearing messages for role: ${userRole}`)
     setMessages([])
     setQuestion('')
   }, [userRole])
 
   function handleNewChat() {
+    console.log('Starting new chat...')
     setMessages([])
     setQuestion('')
   }
@@ -139,13 +149,13 @@ export default function NewDashboardContent({ userRole }: NewDashboardContentPro
         </div>
 
         {/* Input Area */}
-        <div className="border-t border-slate-800 bg-slate-900/50 px-6 py-4">
-          <div className="max-w-3xl mx-auto">
-            {/* New Chat Button - Only show if there are messages */}
+        <div className="border-t border-slate-800 bg-slate-900/50 px-6 py-4 space-y-3">
+          <div className="max-w-3xl mx-auto w-full">
+            {/* New Chat Button - Always visible */}
             {messages.length > 0 && (
               <button
                 onClick={handleNewChat}
-                className="mb-3 px-4 py-2 text-sm font-medium text-gray-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+                className="w-full px-4 py-2.5 text-sm font-medium text-gray-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors mb-3"
               >
                 + New Chat
               </button>
