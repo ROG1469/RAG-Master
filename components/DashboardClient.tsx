@@ -140,7 +140,7 @@ export default function DashboardClient({
         {isKnowledgeBase ? (
           <KnowledgeBaseClient documents={initialDocuments} />
         ) : (
-          <NewDashboardContent userRole={currentRole} />
+          <NewDashboardContent key={currentRole} userRole={currentRole} />
         )}
       </div>
     </div>

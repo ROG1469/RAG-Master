@@ -36,7 +36,13 @@ export default function NewDashboardContent({ userRole }: NewDashboardContentPro
   // Clear messages when role changes
   useEffect(() => {
     setMessages([])
+    setQuestion('')
   }, [userRole])
+
+  function handleNewChat() {
+    setMessages([])
+    setQuestion('')
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -135,6 +141,15 @@ export default function NewDashboardContent({ userRole }: NewDashboardContentPro
         {/* Input Area */}
         <div className="border-t border-slate-800 bg-slate-900/50 px-6 py-4">
           <div className="max-w-3xl mx-auto">
+            {/* New Chat Button - Only show if there are messages */}
+            {messages.length > 0 && (
+              <button
+                onClick={handleNewChat}
+                className="mb-3 px-4 py-2 text-sm font-medium text-gray-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                + New Chat
+              </button>
+            )}
             <form onSubmit={handleSubmit} className="mb-2">
               <div className="relative">
                 <input
