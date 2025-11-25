@@ -8,6 +8,25 @@ import ChatHistorySidebar from './ChatHistorySidebar'
 import KnowledgeBaseClient from './KnowledgeBaseClient'
 import type { Document } from '@/lib/types/database'
 
+interface ChatHistoryItem {
+  id: string
+  question: string
+  answer: string
+  sources: Array<{
+    document_id: string
+    filename: string
+    chunk_content: string
+    relevance_score: number
+  }>
+  created_at: string
+}
+
+interface Message {
+  role: 'user' | 'assistant'
+  content: string
+  sources?: ChatHistoryItem['sources']
+}
+
 interface DashboardContentProps {
   documents: Document[]
   user: {
@@ -28,6 +47,13 @@ export default function DashboardContent({ documents, user }: DashboardContentPr
   
   const [role, setRole] = useState<UserRole>(initialRole)
   const [currentView, setCurrentView] = useState<View>('chat')
+  const [selectedChatHistory, setSelectedChatHistory] = useState<ChatHistoryItem | null>(null)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+  // When a chat from history is clicked
+  const handleChatHistoryClick = (item: ChatHistoryItem) => {
+    setSelectedChatHistory(item)
+  }
 
   // Update role when user prop changes
   useEffect(() => {
@@ -183,7 +209,13 @@ export default function DashboardContent({ documents, user }: DashboardContentPr
                 <KnowledgeBaseClient documents={documents} />
               </div>
             ) : (
-              <ChatInterface role={role} />
+              <ChatInterface 
+                role={role}
+                initialHistory={selectedChatHistory ? [
+                  { role: 'user', content: selectedChatHistory.question },
+                  { role: 'assistant', content: selectedChatHistory.answer, sources: selectedChatHistory.sources }
+                ] : []}
+              />
             )}
           </div>
         </div>
@@ -198,7 +230,10 @@ export default function DashboardContent({ documents, user }: DashboardContentPr
               </h3>
             </div>
             <div className="flex-1 overflow-hidden">
-              <ChatHistorySidebar />
+              <ChatHistorySidebar 
+                onQuestionClick={handleChatHistoryClick}
+                refreshTrigger={refreshTrigger}
+              />
             </div>
           </div>
         )}

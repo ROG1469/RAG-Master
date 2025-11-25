@@ -79,7 +79,10 @@ export async function uploadDocument(formData: FormData) {
         file_size: file.size,
         storage_path: fileName,
         status: 'processing',
-        ...permissions,
+        user_id: null,
+        accessible_by_business_owners: permissions.accessible_by_business_owners,
+        accessible_by_employees: permissions.accessible_by_employees,
+        accessible_by_customers: permissions.accessible_by_customers,
       })
       .select()
       .single()

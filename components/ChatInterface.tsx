@@ -8,6 +8,7 @@ import type { RAGResponse } from '@/lib/types/database'
 interface ChatInterfaceProps {
   role?: string
   onQueryComplete?: () => void
+  initialHistory?: Message[]
 }
 
 interface Message {
@@ -16,12 +17,17 @@ interface Message {
   sources?: RAGResponse['sources']
 }
 
-export default function ChatInterface({ role }: ChatInterfaceProps = {}) {
+export default function ChatInterface({ role, initialHistory = [] }: ChatInterfaceProps = {}) {
   const [question, setQuestion] = useState('')
   const [loading, setLoading] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<Message[]>(initialHistory)
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Update messages when initialHistory changes
+  useEffect(() => {
+    setMessages(initialHistory)
+  }, [initialHistory])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
