@@ -198,11 +198,20 @@ serve(async (req) => {
       );
     }
 
-    // STEP 5 — Parse multi-part question and run similarity searches
-    console.log(`💬 Analyzing question for multiple parts...`);
+    // STEP 5 — Analyze question: Semantic vs Keyword heavy
+    console.log(`💬 Analyzing question for search strategy...`);
     const queryParts = parseMultiPartQuestion(question);
     console.log(`📋 Found ${queryParts.length} question part(s): ${queryParts.map(p => `"${p.substring(0, 30)}..."`).join(', ')}`);
     
+    // Determine if question is more keyword or semantic heavy
+    const hasNumerics = /\d+/.test(question);  // Has numbers (quarterly reports, dates)
+    const hasQuotedTerms = /["'].*["']/.test(question);  // Has quoted strings
+    const isKeywordHeavy = hasNumerics || hasQuotedTerms || question.length < 20;
+    const semanticWeight = isKeywordHeavy ? 0.4 : 0.6;
+    const keywordWeight = isKeywordHeavy ? 0.6 : 0.4;
+    
+    console.log(`🔍 Search strategy: ${isKeywordHeavy ? 'keyword-heavy' : 'semantic-heavy'} (semantic: ${semanticWeight}, keyword: ${keywordWeight})`);
+
     // Log document distribution for debugging
     const docTypes = chunks.reduce((acc: any, item: any) => {
       const filename = item.documents?.filename ?? "Unknown";
@@ -211,81 +220,100 @@ serve(async (req) => {
     }, {});
     console.log(`📂 Documents in search space:`, Object.entries(docTypes).map(([name, count]) => `${name} (${count} chunks)`).join(", "));
 
-    let allScored: any[] = [];
+    let allHybridResults: any[] = [];
     const processedParts = new Set<string>();
+
+    // STEP 6 — Hybrid Search (Semantic + Keyword)
+    console.log(`🔄 Running hybrid search with semantic (${semanticWeight}) + keyword (${keywordWeight}) weights...`);
 
     for (const part of queryParts) {
       if (processedParts.has(part.toLowerCase())) continue;
-      processedParts.add(part.toLowerCase());
+      processedParts.has(part.toLowerCase()) ? null : processedParts.add(part.toLowerCase());
 
-      console.log(`🔍 Searching for: "${part}"`);
+      console.log(`🔍 Hybrid search for: "${part}"`);
       
-      // Generate embedding for this part
+      // Generate embedding for semantic component
       const partEmbedResult = await embeddingModel.embedContent(part);
       const partEmbedding = partEmbedResult.embedding.values;
 
-      // Calculate similarities for this part
-      const scoredChunks = chunks
-        .filter((item: any) => item.embeddings && item.embeddings.length > 0) // Only valid chunks
-        .map((item: any) => {
-          const rawEmbedding = item.embeddings[0].embedding;
-          const embeddingArray = typeof rawEmbedding === "string"
-            ? JSON.parse(rawEmbedding)
-            : rawEmbedding;
+      // Call hybrid_search RPC function
+      const { data: hybridResults, error: hybridError } = await supabase.rpc('hybrid_search', {
+        p_question: part,
+        p_question_embedding: partEmbedding,
+        p_document_ids: documentIds,
+        p_semantic_weight: semanticWeight,
+        p_keyword_weight: keywordWeight,
+        p_limit: 15
+      });
 
-          return {
-            chunk_id: item.id,
-            content: item.content,
-            document_id: item.document_id,
-            filename: item.documents?.filename ?? "Unknown",
-            similarity: cosineSimilarity(partEmbedding, embeddingArray),
-            query_part: part,
-          };
-        })
-        .sort((a: any, b: any) => b.similarity - a.similarity);
-
-      // For multi-part questions, be more aggressive: get more chunks and lower threshold
-      const isMultiPart = queryParts.length > 1;
-      const threshold = isMultiPart ? 0.15 : 0.25; // Lower threshold for multi-part to catch all relevant info
-      const resultsLimit = isMultiPart ? 15 : 10; // Get more results for multi-part questions
-      
-      const partScored = scoredChunks
-        .filter((item: any) => item.similarity >= threshold)
-        .slice(0, resultsLimit);
-
-      console.log(`  → Found ${partScored.length} relevant chunks (multi-part: ${isMultiPart}, threshold: ${threshold}), top similarity: ${scoredChunks[0]?.similarity.toFixed(3) ?? 'N/A'}`);
-      
-      // Log which documents these chunks come from
-      if (partScored.length > 0) {
-        const sourceCount = new Set(partScored.map((c: any) => c.filename)).size;
-        console.log(`  → From ${sourceCount} document(s): ${Array.from(new Set(partScored.map((c: any) => c.filename))).join(", ")}`);
-        console.log(`  → Similarity range: ${Math.min(...partScored.map((c: any) => c.similarity)).toFixed(3)} to ${Math.max(...partScored.map((c: any) => c.similarity)).toFixed(3)}`);
+      if (hybridError) {
+        console.error(`❌ Hybrid search failed for "${part}":`, hybridError);
+        // Fallback to semantic search if hybrid fails
+        console.log(`⚠️ Falling back to semantic search for "${part}"...`);
+        const scoredChunks = chunks
+          .filter((item: any) => item.embeddings && item.embeddings.length > 0)
+          .map((item: any) => {
+            const rawEmbedding = item.embeddings[0].embedding;
+            const embeddingArray = typeof rawEmbedding === "string"
+              ? JSON.parse(rawEmbedding)
+              : rawEmbedding;
+            return {
+              chunk_id: item.id,
+              content: item.content,
+              document_id: item.document_id,
+              filename: item.documents?.filename ?? "Unknown",
+              combined_score: cosineSimilarity(partEmbedding, embeddingArray),
+              similarity: cosineSimilarity(partEmbedding, embeddingArray),
+              search_type: 'semantic-fallback'
+            };
+          })
+          .filter((item: any) => item.similarity >= 0.15)
+          .sort((a: any, b: any) => b.similarity - a.similarity)
+          .slice(0, 15);
+        allHybridResults.push(...scoredChunks);
+      } else if (hybridResults && hybridResults.length > 0) {
+        console.log(`  ✅ Found ${hybridResults.length} results (top score: ${hybridResults[0].combined_score?.toFixed(3)})`);
+        const resultsSummary = hybridResults.slice(0, 3).map((r: any) => 
+          `${r.filename} (score: ${r.combined_score?.toFixed(3)}, sem: ${r.similarity?.toFixed(3)}, keyword: ${r.keyword_score?.toFixed(3)})`
+        ).join('; ');
+        console.log(`  📊 Top results: ${resultsSummary}`);
+        
+        // Map hybrid results back to expected format
+        const mappedResults = hybridResults.map((r: any) => ({
+          chunk_id: r.chunk_id,
+          content: r.content,
+          document_id: r.document_id,
+          filename: r.filename,
+          combined_score: r.combined_score,
+          similarity: r.similarity || 0,
+          keyword_score: r.keyword_score || 0,
+          search_type: 'hybrid'
+        }));
+        allHybridResults.push(...mappedResults);
       }
-      
-      allScored.push(...partScored);
     }
 
-    // Remove duplicates, keep highest similarity
-    const uniqueScored = Array.from(
-      allScored
+    // Remove duplicates, keep highest combined score
+    const uniqueHybrid = Array.from(
+      allHybridResults
         .reduce((map, item) => {
           const key = item.chunk_id;
           const existing = map.get(key);
-          if (!existing || item.similarity > existing.similarity) {
+          if (!existing || (item.combined_score || 0) > (existing.combined_score || 0)) {
             map.set(key, item);
           }
           return map;
         }, new Map<string, any>())
         .values()
-    ).sort((a: any, b: any) => b.similarity - a.similarity);
+    ).sort((a: any, b: any) => (b.combined_score || 0) - (a.combined_score || 0));
 
-    console.log(`✅ Total unique chunks selected: ${uniqueScored.length}`);
-    if (uniqueScored.length > 0) {
-      const topItem = uniqueScored[0] as any;
-      console.log(`  → Top similarity: ${topItem.similarity.toFixed(3)}`);
+    console.log(`✅ Total unique hybrid results: ${uniqueHybrid.length}`);
+    if (uniqueHybrid.length > 0) {
+      const topItem = uniqueHybrid[0] as any;
+      console.log(`  → Top score: ${topItem.combined_score?.toFixed(3)}`);
     }
     
-    const scored = uniqueScored;
+    const scored = uniqueHybrid;
 
     if (scored.length === 0) {
       return new Response(
