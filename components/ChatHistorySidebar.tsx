@@ -17,6 +17,13 @@ interface ChatHistoryItem {
   created_at: string
 }
 
+interface ChatSession {
+  id: string
+  title: string
+  created_at: string
+  items: ChatHistoryItem[]
+}
+
 interface ChatHistorySidebarProps {
   onQuestionClick?: (item: ChatHistoryItem) => void
   refreshTrigger?: number // When this changes, refresh the history
@@ -24,28 +31,90 @@ interface ChatHistorySidebarProps {
 
 export default function ChatHistorySidebar({ onQuestionClick, refreshTrigger }: ChatHistorySidebarProps) {
   const [history, setHistory] = useState<ChatHistoryItem[]>([])
+  const [sessions, setSessions] = useState<ChatSession[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     async function loadHistory() {
       setLoading(true)
       const result = await getChatHistory()
       if (result.data) {
-        setHistory(result.data as ChatHistoryItem[])
+        const items = result.data as ChatHistoryItem[]
+        setHistory(items)
+        const groupedSessions = groupIntoSessions(items)
+        setSessions(groupedSessions)
       }
       setLoading(false)
     }
     loadHistory()
-  }, [refreshTrigger]) // Re-run when refreshTrigger changes
+  }, [refreshTrigger])
+
+  function groupIntoSessions(items: ChatHistoryItem[]): ChatSession[] {
+    if (items.length === 0) return []
+    
+    const sessions: ChatSession[] = []
+    let currentSession: ChatHistoryItem[] = []
+    let lastTime = new Date(items[items.length - 1].created_at).getTime()
+    const SESSION_GAP_MS = 30 * 60 * 1000 // 30 minutes
+    
+    // Process items in reverse chronological order
+    for (let i = items.length - 1; i >= 0; i--) {
+      const itemTime = new Date(items[i].created_at).getTime()
+      const timeDiff = lastTime - itemTime
+      
+      if (timeDiff > SESSION_GAP_MS && currentSession.length > 0) {
+        const firstItem = currentSession[0]
+        const sessionTitle = firstItem.question.substring(0, 40) + (firstItem.question.length > 40 ? '...' : '')
+        sessions.push({
+          id: `session-${currentSession[0].id}`,
+          title: sessionTitle,
+          created_at: firstItem.created_at,
+          items: currentSession
+        })
+        currentSession = []
+      }
+      
+      currentSession.unshift(items[i])
+      lastTime = itemTime
+    }
+    
+    // Add the last session
+    if (currentSession.length > 0) {
+      const firstItem = currentSession[0]
+      const sessionTitle = firstItem.question.substring(0, 40) + (firstItem.question.length > 40 ? '...' : '')
+      sessions.unshift({
+        id: `session-${firstItem.id}`,
+        title: sessionTitle,
+        created_at: firstItem.created_at,
+        items: currentSession
+      })
+    }
+    
+    return sessions
+  }
 
   async function refreshHistory() {
     setLoading(true)
     const result = await getChatHistory()
     if (result.data) {
-      setHistory(result.data as ChatHistoryItem[])
+      const items = result.data as ChatHistoryItem[]
+      setHistory(items)
+      const groupedSessions = groupIntoSessions(items)
+      setSessions(groupedSessions)
     }
     setLoading(false)
+  }
+
+  function toggleSession(sessionId: string) {
+    const newExpanded = new Set(expandedSessions)
+    if (newExpanded.has(sessionId)) {
+      newExpanded.delete(sessionId)
+    } else {
+      newExpanded.add(sessionId)
+    }
+    setExpandedSessions(newExpanded)
   }
 
   function handleQuestionClick(item: ChatHistoryItem) {
@@ -93,7 +162,7 @@ export default function ChatHistorySidebar({ onQuestionClick, refreshTrigger }: 
           </button>
         </div>
         <p className="text-xs text-gray-400">
-          {history.length} conversation{history.length !== 1 ? 's' : ''}
+          {sessions.length} session{sessions.length !== 1 ? 's' : ''}
         </p>
       </div>
 
@@ -103,35 +172,53 @@ export default function ChatHistorySidebar({ onQuestionClick, refreshTrigger }: 
           <div className="p-4 text-center text-gray-400 text-sm">
             Loading history...
           </div>
-        ) : history.length === 0 ? (
+        ) : sessions.length === 0 ? (
           <div className="p-4 text-center text-gray-400 text-sm">
             <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-30" />
             No chat history yet
           </div>
         ) : (
           <div className="divide-y divide-gray-700">
-            {history.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => handleQuestionClick(item)}
-                className={`w-full p-3 text-left hover:bg-gray-700/50 transition-colors ${
-                  selectedId === item.id ? 'bg-gray-700' : ''
-                }`}
-              >
-                <div className="flex items-start gap-2">
-                  <MessageSquare className="h-4 w-4 text-gray-400 mt-1 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-200 font-medium wrap-break-word">
-                      {truncateText(item.question)}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
-                      <Clock className="h-3 w-3" />
-                      {formatTimestamp(item.created_at)}
+            {sessions.map((session) => (
+              <div key={session.id}>
+                {/* Session Header */}
+                <button
+                  onClick={() => toggleSession(session.id)}
+                  className="w-full p-3 text-left hover:bg-gray-700/50 transition-colors flex items-center justify-between"
+                >
+                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                    <MessageSquare className="h-4 w-4 text-gray-400 mt-1 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-200 font-medium wrap-break-word">
+                        {truncateText(session.title)}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
+                        <Clock className="h-3 w-3" />
+                        {formatTimestamp(session.created_at)} • {session.items.length} message{session.items.length !== 1 ? 's' : ''}
+                      </div>
                     </div>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-gray-400 shrink-0 mt-1" />
-                </div>
-              </button>
+                  <ChevronRight className={`h-4 w-4 text-gray-400 shrink-0 transition-transform ${expandedSessions.has(session.id) ? 'rotate-90' : ''}`} />
+                </button>
+                
+                {/* Session Items */}
+                {expandedSessions.has(session.id) && (
+                  <div className="bg-gray-800/30 divide-y divide-gray-700">
+                    {session.items.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => handleQuestionClick(item)}
+                        className={`w-full p-2 pl-8 text-left hover:bg-gray-700/50 transition-colors text-xs ${
+                          selectedId === item.id ? 'bg-gray-700' : ''
+                        }`}
+                      >
+                        <p className="text-gray-300 font-medium">{truncateText(item.question, 40)}</p>
+                        <p className="text-gray-500 text-xs mt-1">{formatTimestamp(item.created_at)}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         )}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { queryRAG } from '@/app/actions/rag'
 import { Send, Loader2, Bot } from 'lucide-react'
 import type { RAGResponse } from '@/lib/types/database'
@@ -32,6 +32,11 @@ export default function NewDashboardContent({ userRole }: NewDashboardContentPro
     sources?: RAGResponse['sources']
   }>>([])
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+  // Clear messages when role changes
+  useEffect(() => {
+    setMessages([])
+  }, [userRole])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
