@@ -327,12 +327,10 @@ Answer (plain professional text, addressing ALL parts of the question):`;
     );
   } catch (error) {
     console.error("❌ Error:", error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
 
     return new Response(
       JSON.stringify({
-        error: errorMessage || "Unknown error occurred in query-rag function",
-        details: error instanceof Error ? error.stack : undefined,
+        error: (error as Error)?.message ?? "Unknown error",
       }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
