@@ -1,0 +1,124 @@
+COMPREHENSIVE TEST DOCUMENT FOR RAG SYSTEM
+==========================================
+
+SECTION 1: INTRODUCTION
+The Retrieval-Augmented Generation (RAG) system combines vector search with large language models to provide intelligent answers based on document content. This document serves as a comprehensive test case for the refactored architecture where parsing, embedding, and querying are properly separated.
+
+SECTION 2: SYSTEM ARCHITECTURE OVERVIEW
+The RAG system consists of three main components:
+1. Process Document: Responsible for parsing files and creating text chunks
+2. Generate Embeddings: Creates vector embeddings from text chunks
+3. Query RAG: Handles user queries using vector search and AI responses
+
+This separation of concerns allows for better scalability and error handling.
+
+SECTION 3: FILE TYPES SUPPORTED
+The system supports multiple file formats including:
+- PDF documents
+- Microsoft Word (.docx) files
+- Excel spreadsheets (.xlsx)
+- Plain text files (.txt)
+- CSV files for structured data
+
+Each file type has specialized parsing logic to extract maximum quality data.
+
+SECTION 4: CHUNKING STRATEGY
+The system uses intelligent chunking that respects semantic boundaries:
+- For regular text and PDFs: chunks are created at sentence boundaries with overlap
+- For spreadsheets: chunks maintain the spreadsheet structure with headers included
+
+Chunk size is typically 1000 characters with 200 character overlap for context continuity.
+
+SECTION 5: EMBEDDING GENERATION
+Embeddings are generated using Google's text-embedding-004 model:
+- Each chunk generates a 768-dimensional embedding vector
+- Embeddings are stored in the database with chunk references
+- Cosine similarity is used for vector search
+
+The embedding process is now completely separate from document parsing for better reliability.
+
+SECTION 6: VECTOR SEARCH AND RETRIEVAL
+When a query is submitted:
+1. The query is converted to an embedding using the same model
+2. Cosine similarity search finds the top-K most relevant chunks
+3. The context from these chunks is provided to the LLM
+4. The LLM generates a response based on the retrieved context
+
+This process ensures accurate and relevant answers.
+
+SECTION 7: ERROR HANDLING AND STATUS TRACKING
+Document status progresses through these states:
+- processing: Initial state after upload
+- chunks_created: After successful parsing and chunking (NEW STATUS)
+- completed: After successful embedding generation
+- failed: If any step encounters an error with error_message
+
+This allows for better debugging and user feedback.
+
+SECTION 8: PERFORMANCE OPTIMIZATION
+The refactored system includes several optimizations:
+- Batch processing of embeddings
+- Optimized database queries
+- Efficient text chunking algorithms
+- Proper error handling and recovery
+
+Performance has improved significantly with the new architecture.
+
+SECTION 9: TESTING PROCEDURES
+When testing the refactored system:
+1. Upload a document and verify chunks_created status
+2. Wait for embedding generation and verify completed status
+3. Submit queries and verify retrieved chunks are relevant
+4. Test error scenarios with invalid files
+
+Comprehensive testing ensures system reliability.
+
+SECTION 10: TROUBLESHOOTING GUIDE
+Common issues and solutions:
+- No chunks created: Check file format and content validity
+- Embedding generation fails: Verify Gemini API key and rate limits
+- Query returns no results: Ensure document is in completed status
+- Slow performance: Check database indexes and API rate limits
+
+Most issues can be resolved by checking logs and verifying configurations.
+
+SECTION 11: SECURITY CONSIDERATIONS
+The system implements security measures:
+- Role-based access control (business_owner, employee, customer)
+- Row-level security policies in the database
+- Input validation on all endpoints
+- Secure API key management
+
+Users can only access documents and queries appropriate to their role.
+
+SECTION 12: FUTURE ENHANCEMENTS
+Planned improvements include:
+- Multi-language support for embeddings
+- Advanced query preprocessing with question decomposition
+- Caching of frequently accessed chunks
+- Real-time collaboration features
+- Advanced analytics and usage tracking
+
+These enhancements will further improve the system capabilities.
+
+SECTION 13: ADVANCED FEATURES
+The system includes advanced features such as:
+- Chat history management with context awareness
+- Document versioning and update tracking
+- Custom prompts for specific use cases
+- Batch query processing
+- Export of search results
+
+These features make the system suitable for enterprise use.
+
+SECTION 14: COMPLIANCE AND DATA PRIVACY
+The system follows data privacy best practices:
+- Encryption of data in transit and at rest
+- Compliance with GDPR and data protection regulations
+- User consent management
+- Audit logging for compliance
+
+Privacy and security are paramount in all operations.
+
+SECTION 15: CONCLUSION
+The refactored RAG system with separated concerns for parsing, embedding, and querying provides a robust, scalable, and maintainable solution for intelligent document processing and retrieval. This comprehensive test document validates all system components working together effectively.
